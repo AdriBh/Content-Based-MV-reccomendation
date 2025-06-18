@@ -1,5 +1,4 @@
-python-3.10
 streamlit
-tensorflow==2.11.1
+tensorflow
 scikit-learn
 pandas
