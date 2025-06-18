@@ -29,14 +29,16 @@ def load_all_data():
 
 features, df_c, genre_columns, model, movie_embeddings = load_all_data()
 
-# --- Recommendation Function ---
 def get_recommendations(liked_titles, liked_genres, top_n=10, movie_weight=0.7, genre_weight=0.3):
+    # --- Movie vector ---
     liked_movie_vectors = features[df_c['original_title'].isin(liked_titles)]
-    if liked_movie_vectors.empty:
-        return pd.DataFrame(columns=['original_title', 'score'])
+    if not liked_movie_vectors.empty:
+        liked_movie_mean = liked_movie_vectors.mean()
+    else:
+        liked_movie_mean = pd.Series([0.0] * features.shape[1], index=features.columns)
+        movie_weight = 0.0  # Ignore movie contribution if no titles
 
-    liked_movie_mean = liked_movie_vectors.mean()
-
+    # --- Genre vector ---
     genre_vector = pd.Series([0.0] * len(genre_columns), index=genre_columns)
     for g in liked_genres:
         if g in genre_vector:
@@ -45,9 +47,22 @@ def get_recommendations(liked_titles, liked_genres, top_n=10, movie_weight=0.7, 
     genre_vector_full = pd.Series([0.0] * features.shape[1], index=features.columns)
     genre_vector_full.update(genre_vector)
 
+    if genre_vector.sum() == 0:
+        genre_weight = 0.0  # Ignore genre contribution if none selected
+
+    # --- Combine weighted profile ---
+    if movie_weight + genre_weight == 0:
+        return pd.DataFrame(columns=['original_title', 'score'])  # No input case
+
+    # Normalize weights to sum to 1
+    total_weight = movie_weight + genre_weight
+    movie_weight /= total_weight
+    genre_weight /= total_weight
+
     user_profile_series = movie_weight * liked_movie_mean + genre_weight * genre_vector_full
     user_profile = user_profile_series.values.reshape(1, -1)
 
+    # --- Compute embedding & similarity ---
     user_embedding = model.predict(user_profile)
     sim_scores = cosine_similarity(user_embedding, movie_embeddings).flatten()
 
@@ -55,6 +70,7 @@ def get_recommendations(liked_titles, liked_genres, top_n=10, movie_weight=0.7, 
     df_copy['score'] = sim_scores
     recommendations = df_copy.sort_values(by='score', ascending=False)
     return recommendations[['original_title', 'score']].head(top_n)
+
 
 # --- Streamlit UI ---
 st.set_page_config(page_title="🎬 Movie Recommender", layout="centered")
