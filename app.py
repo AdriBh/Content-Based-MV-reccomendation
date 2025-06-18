@@ -5,7 +5,8 @@ import pandas as pd
 import numpy as np
 import pickle
 from sklearn.metrics.pairwise import cosine_similarity
-from tensorflow.keras.models import load_model
+from keras.models import load_model
+
 
 # --- Unzip df_c.pkl from data_file.zip if not already extracted ---
 if not os.path.exists("df_c.pkl"):
@@ -21,7 +22,7 @@ def load_all_data():
     features = pd.read_pickle("features.pkl")
     with open("genre_columns.pkl", "rb") as f:
         genre_columns = pickle.load(f)
-    model = load_model("autoencoder_model.h5")
+    model = load_model("autoencoder_model.keras")
     df_c = pd.read_pickle("df_c.pkl")
     movie_embeddings = model.predict(features.values)
     return features, df_c, genre_columns, model, movie_embeddings
