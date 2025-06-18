@@ -11,6 +11,9 @@ from tensorflow.keras.models import load_model
 if not os.path.exists("df_c.pkl"):
     with zipfile.ZipFile("data_file.zip", "r") as zip_ref:
         zip_ref.extract("df_c.pkl")
+if not os.path.exists("features.pkl"):
+    with zipfile.ZipFile("features.zip", "r") as zip_ref1:
+        zip_ref1.extract("features.pkl")
 
 # --- Load Data ---
 @st.cache_resource
